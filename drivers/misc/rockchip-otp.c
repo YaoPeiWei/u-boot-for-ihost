@@ -1,3 +1,4 @@
+#define DEBUG
 // SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2019 Fuzhou Rockchip Electronics Co., Ltd

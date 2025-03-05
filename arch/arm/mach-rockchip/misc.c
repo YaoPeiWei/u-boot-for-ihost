@@ -1,3 +1,4 @@
+#define LOG_DEBUG
 /* SPDX-License-Identifier: GPL-2.0+ */
 /*
  * RK3399: Architecture common definitions
@@ -89,6 +90,22 @@ int rockchip_cpuid_from_efuse(const u32 cpuid_offset,
 		return -1;
 	}
 #endif
+	return 0;
+}
+
+int rockchip_cpucode_set(const u8 *cpucode, const u32 cpucode_length)
+{
+	char cpucode_str[cpucode_length * 2 + 1];
+	int i;
+
+	memset(cpucode_str, 0, sizeof(cpucode_str));
+	for (i = 0; i < 2; i++)
+		sprintf(&cpucode_str[i * 2], "%02x", cpucode[i]);
+
+	debug("cpu code: %s\n", cpucode_str);
+
+	env_set("cpucode#", cpucode_str);
+
 	return 0;
 }
 

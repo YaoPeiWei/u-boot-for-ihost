@@ -358,6 +358,7 @@ config ROCKCHIP_RV1126
 	select PMIC_RK8XX
 	select BOARD_LATE_INIT
 	imply ROCKCHIP_COMMON_BOARD
+	select SPL_OPTEE_IMAGE if SPL_FIT
 	imply OF_LIBFDT_OVERLAY
 	imply ROCKCHIP_OTP
 	imply MISC_INIT_R
@@ -449,6 +450,14 @@ config ROCKCHIP_BOOT_MODE_REG
 	  The Soc will enter to different boot mode(defined in asm/arch-rockchip/boot_mode.h)
 	  according to the value from this register.
 
+config ROCKCHIP_OPTEE_BINARY
+	bool "Use a OP-TEE binary provided by Rockchip"
+	depends on SPL_OPTEE_IMAGE
+	default y if ROCKCHIP_RK3036 || ROCKCHIP_RK3128 || ROCKCHIP_RK3288 || ROCKCHIP_RV1126
+	help
+	  This option enables the usage of vendor-provided OP-TEE binaries.
+	  Say Y if you are using OP-TEE binary provided by Rockchip.
+
 config ROCKCHIP_RK8XX_DISABLE_BOOT_ON_POWERON
 	bool "Disable device boot on power plug-in"
 	depends on PMIC_RK8XX
@@ -516,6 +525,14 @@ config ROCKCHIP_SPI_IMAGE
 	  Some Rockchip SoCs support booting from SPI flash. Enable this
 	  option to produce a SPI-flash image containing U-Boot. The image
 	  is built by binman. U-Boot sits near the start of the image.
+
+config ROCKCHIP_PRELOADER_ATAGS
+	bool "Rockchip pre-loader atags"
+	default y if ARCH_ROCKCHIP
+	help
+	  This enable support Rockchip atags among pre-loaders, i.e. ddr, miniloader, ATF,
+	  tos, U-Boot, etc. It delivers boot and configure information, shared with pre-loaders
+	  and finally ends with U-Boot.
 
 config LNX_KRNL_IMG_TEXT_OFFSET_BASE
 	default TEXT_BASE

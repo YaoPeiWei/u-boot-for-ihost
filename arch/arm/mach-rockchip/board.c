@@ -330,8 +330,11 @@ int fastboot_set_reboot_flag(enum fastboot_reboot_reason reason)
 #ifdef CONFIG_MISC_INIT_R
 __weak int misc_init_r(void)
 {
+	const u32 cpucode_offset = 0x02;
+	const u32 cpucode_length = 0x02;
 	const u32 cpuid_offset = CFG_CPUID_OFFSET;
 	const u32 cpuid_length = 0x10;
+	u8 cpucode[cpucode_length];
 	u8 cpuid[cpuid_length];
 	int ret;
 
@@ -340,6 +343,14 @@ __weak int misc_init_r(void)
 		return ret;
 
 	ret = rockchip_cpuid_set(cpuid, cpuid_length);
+	if (ret)
+		return ret;
+
+	ret = rockchip_cpuid_from_efuse(cpucode_offset, cpucode_length, cpucode);
+	if (ret)
+		return ret;
+
+	ret = rockchip_cpucode_set(cpucode, cpucode_length);
 	if (ret)
 		return ret;
 

@@ -23,6 +23,9 @@
 		#size-cells = <1>;
 		status = "okay";
 
+		cpu_code: code@2 {
+			reg = <0x02 0x2>;
+		};
 		cpu_id: id@7 {
 			reg = <0x07 0x10>;
 		};
