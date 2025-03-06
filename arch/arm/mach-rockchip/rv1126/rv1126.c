@@ -57,6 +57,44 @@ void board_debug_uart_init(void)
 		     GPIO3A2_UART2_TX_M1 << GPIO3A2_SHIFT);
 }
 
+/************ *uart3* *************/
+enum {
+	GPIO3A0_SHIFT		= 0,
+	GPIO3A0_MASK		= GENMASK(2, 0),
+	GPIO3A0_GPIO		= 0,
+	GPIO3A0_RESERVED0,
+	GPIO3A0_RESERVED1,
+	GPIO3A0_CAN_RXD_M0,
+	GPIO3A0_UART3_TX_M2,
+
+	GPIO3A1_SHIFT		= 4,
+	GPIO3A1_MASK		= GENMASK(6, 4),
+	GPIO3A1_GPIO		= 0,
+	GPIO3A1_RESERVED0,
+	GPIO3A1_RESERVED1,
+	GPIO3A1_CAN_TXD_M0,
+	GPIO3A1_UART3_RX_M2,
+
+	UART3_IO_SEL_SHIFT	= 10,
+	UART3_IO_SEL_MASK	= GENMASK(11, 10),
+	UART3_IO_SEL_M0		= 0,
+	UART3_IO_SEL_M1,
+	UART3_IO_SEL_M2,
+};
+
+void board_uart3_init(void){
+	static struct rv1126_grf * const grf = (void *)GRF_BASE;
+	/* UART3 m2*/
+	rk_clrsetreg(&grf->iofunc_con2, UART3_IO_SEL_MASK,
+		UART3_IO_SEL_M2 << UART3_IO_SEL_SHIFT);
+	
+	/* Switch iomux */
+	rk_clrsetreg(&grf->gpio3a_iomux_l,
+			GPIO3A1_MASK | GPIO3A0_MASK,
+			GPIO3A1_UART3_RX_M2 << GPIO3A1_SHIFT |
+			GPIO3A0_UART3_TX_M2 << GPIO3A0_SHIFT);
+}
+
 #ifndef CONFIG_TPL_BUILD
 int arch_cpu_init(void)
 {

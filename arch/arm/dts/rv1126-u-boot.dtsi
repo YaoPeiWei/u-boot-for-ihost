@@ -75,3 +75,7 @@
 &uart2 {
 	bootph-pre-ram;
 };
+
+&uart3 {    
+    bootph-pre-ram;
+};

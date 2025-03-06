@@ -111,6 +111,26 @@ void printhex8(unsigned int value);
  */
 void printdec(unsigned int value);
 
+/**
+ * printascii() - Output an ASCII string to the debug UART
+ *
+ * @str:	String to output
+ */
+void uart3_printascii(const char *str);
+
+/**
+ * printhex2() - Output a 2-digit hex value
+ *
+ * @value:	Value to output
+ */
+void uart3_printhex2(uint value);
+
+int uart3_getc(void);
+
+int uart3_tstc(void);
+
+void ihost_uart3_init(void);
+
 #ifdef CONFIG_DEBUG_UART_ANNOUNCE
 #define _DEBUG_UART_ANNOUNCE	printascii("\n<debug_uart>\n");
 #else
@@ -190,11 +210,57 @@ void printdec(unsigned int value);
 		_debug_uart_putc('0' + value); \
 	} \
 \
+	int uart3_getc(void)\
+	{ \
+		return _uart3_getc(); \
+	} \
+\
+	int uart3_tstc(void)\
+	{ \
+		return _uart3_tstc(true); \
+	} \
+\
+	static inline void uart3_printhex1(uint digit) \
+	{ \
+		digit &= 0xf; \
+		_uart3_putc(digit > 9 ? digit - 10 + 'a' : digit + '0'); \
+	} \
+\
+	static inline void uart3_printhex(uint value, int digits) \
+	{ \
+		while (digits-- > 0) \
+			uart3_printhex1(value >> (4 * digits)); \
+	} \
+\
+	void uart3_printhex2(uint value) \
+	{ \
+		uart3_printhex(value, 2); \
+	} \
+\
+	static inline void _uart3_printch(int ch) \
+	{ \
+		if (ch == '\n') \
+			_uart3_putc('\r'); \
+		_uart3_putc(ch); \
+	} \
+\
+	void uart3_printascii(const char *str) \
+	{ \
+		while (*str) \
+			_uart3_printch(*str++); \
+	} \
+\
 	void debug_uart_init(void) \
 	{ \
 		board_debug_uart_init(); \
 		_debug_uart_init(); \
 		_DEBUG_UART_ANNOUNCE \
 	} \
-
+\
+	void ihost_uart3_init(void) \
+	{ \
+		board_uart3_init(); \
+		_uart3_init(); \
+	} \
+\
 #endif

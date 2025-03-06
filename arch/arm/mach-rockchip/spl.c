@@ -138,4 +138,8 @@ void board_init_f(ulong dummy)
 	gd->ram_top = board_get_usable_ram_top(gd->ram_size);
 #endif
 	preloader_console_init();
+
+	ihost_uart3_init();
+
+	uart3_printascii("waitting key cmd 3 press...\n");
 }
