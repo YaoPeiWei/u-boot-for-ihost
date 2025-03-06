@@ -242,6 +242,11 @@ config CMD_BOOTM
 	help
 	  Boot an application image from the memory.
 
+config CMD_BOOTCUBE
+	bool "bootcube"
+	help
+	  Enable the bootcube command, which allows to boot the cube system.
+
 config CMD_BOOTM_PRE_LOAD
        bool "enable pre-load on bootm"
        depends on CMD_BOOTM
