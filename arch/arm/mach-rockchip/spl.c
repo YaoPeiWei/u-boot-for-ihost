@@ -140,6 +140,5 @@ void board_init_f(ulong dummy)
 	preloader_console_init();
 
 	ihost_uart3_init();
-
-	uart3_printascii("waitting key cmd 3 press...\n");
+	
 }

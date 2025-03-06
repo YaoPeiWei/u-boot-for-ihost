@@ -259,8 +259,7 @@ void ihost_uart3_init(void);
 \
 	void ihost_uart3_init(void) \
 	{ \
-		board_uart3_init(); \
 		_uart3_init(); \
 	} \
-\
+
 #endif

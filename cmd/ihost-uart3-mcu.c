@@ -92,8 +92,10 @@ int listen_uart3_data(void) {
     uint16_t crc_received, crc_calculated;
     printf("Listening on UART3...\n");
     start_time = get_timer(0);
+    //int times = 0;
 
     while (get_timer(start_time) < TIMEOUT_MS) {
+    //while (times < TIMEOUT_MS) {
         if (uart3_tstc()) {
             uint8_t byte = uart3_getc();
 
@@ -159,6 +161,8 @@ int listen_uart3_data(void) {
                 }
             }
         }
+        //times++;
+
         udelay(1000);  // 减少 CPU 占用
     }
 
@@ -166,7 +170,7 @@ int listen_uart3_data(void) {
     return RESULT_ERRO_TIMEOUT;
 }
 
-static int do_uart3_test(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[])
+static int do_uart3_test(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 {
 
     uart3_printascii("do_uart3_test waitting key 3 press...\n");

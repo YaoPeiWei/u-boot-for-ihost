@@ -320,74 +320,6 @@ int ns16550_tstc(struct ns16550 *com_port)
 
 #endif /* !CONFIG_IS_ENABLED(NS16550_MIN_FUNCTIONS) */
 
-#define CONFIG_UART3_BASE 		0xff580000
-#define CONFIG_UART3_CLOCK 		24000000
-#define CONFIG_UART3_BAUDRATE	115200
-
-static inline void _uart3_init(void)
-{
-	struct NS16550 *com_port = (struct NS16550 *)CONFIG_UART3_BASE;
-	int baud_divisor;
-
-	/* Wait until tx buffer is empty */
-	while (!(serial_din(&com_port->lsr) & UART_LSR_TEMT))
-		;
-
-	/*
-		* We copy the code from above because it is already horribly messy.
-		* Trying to refactor to nicely remove the duplication doesn't seem
-		* feasible. The better fix is to move all users of this driver to
-		* driver model.
-		*/
-	baud_divisor = ns16550_calc_divisor(com_port, CONFIG_UART3_CLOCK,
-		CONFIG_UART3_BAUDRATE);
-	serial_dout(&com_port->ier, CONFIG_SYS_NS16550_IER);
-	serial_dout(&com_port->mcr, UART_MCRVAL);
-	serial_dout(&com_port->fcr, UART_FCR_DEFVAL);
-
-	serial_dout(&com_port->lcr, UART_LCR_BKSE | UART_LCRVAL);
-	serial_dout(&com_port->dll, baud_divisor & 0xff);
-	serial_dout(&com_port->dlm, (baud_divisor >> 8) & 0xff);
-	serial_dout(&com_port->lcr, UART_LCRVAL);
-}
-
-
-static inline void _uart3_putc(int ch)
-{	
-	struct NS16550 *com_port = (struct NS16550 *)CONFIG_UART3_BASE;
-
-	while (!(serial_din(&com_port->lsr) & UART_LSR_THRE))
-	;
-	serial_dout(&com_port->thr, ch);
-}
-
-
-static inline int _uart3_getc(void)
-{
-	struct NS16550 *com_port = (struct NS16550 *)CONFIG_UART3_BASE;
-
-	int i = 0;
- 
-	while(!(serial_din(&com_port->lsr) & UART_LSR_DR))  
-	{
-		mdelay(100);   //delay 100ms
-		i++;
-		if(i>=200)   //waiting-timeout 20s
-			return -1;
-	}
-	return serial_din(&com_port->rbr);
-}
-
-static inline int _uart3_tstc(int input)
-{
-	struct NS16550 *com_port = (struct NS16550 *)CONFIG_UART3_BASE;
-
-	if (input)
-		return serial_din(&com_port->lsr) & UART_LSR_DR ? 1 : 0;
-	else
-		return serial_din(&com_port->lsr) & UART_LSR_THRE ? 0 : 1;
-}
-
 
 #ifdef CONFIG_DEBUG_UART_NS16550
 
@@ -443,6 +375,113 @@ static inline void _debug_uart_putc(int ch)
 #endif
 	}
 	serial_dout(&com_port->thr, ch);
+}
+
+
+#include <asm/arch-rockchip/hardware.h>
+#include <asm/arch-rockchip/grf_rv1126.h>
+
+#define GRF_BASE				0xFE000000
+#define CONFIG_UART3_BASE 		0xff580000
+#define CONFIG_UART3_CLOCK 		24000000
+#define CONFIG_UART3_BAUDRATE	115200
+
+enum {
+	GPIO3A0_SHIFT		= 0,
+	GPIO3A0_MASK		= GENMASK(2, 0),
+	GPIO3A0_GPIO		= 0,
+	GPIO3A0_RESERVED0,
+	GPIO3A0_RESERVED1,
+	GPIO3A0_CAN_RXD_M0,
+	GPIO3A0_UART3_TX_M2,
+
+	GPIO3A1_SHIFT		= 4,
+	GPIO3A1_MASK		= GENMASK(6, 4),
+	GPIO3A1_GPIO		= 0,
+	GPIO3A1_RESERVED0,
+	GPIO3A1_RESERVED1,
+	GPIO3A1_CAN_TXD_M0,
+	GPIO3A1_UART3_RX_M2,
+
+	UART3_IO_SEL_SHIFT	= 10,
+	UART3_IO_SEL_MASK	= GENMASK(11, 10),
+	UART3_IO_SEL_M0		= 0,
+	UART3_IO_SEL_M1,
+	UART3_IO_SEL_M2,
+};
+
+static inline void board_uart3_init(void){
+	static struct rv1126_grf * const grf = (void *)GRF_BASE;
+	/* UART3 m2*/
+	rk_clrsetreg(&grf->iofunc_con2, UART3_IO_SEL_MASK,
+		UART3_IO_SEL_M2 << UART3_IO_SEL_SHIFT);
+	
+	/* Switch iomux */
+	rk_clrsetreg(&grf->gpio3a_iomux_l,
+			GPIO3A1_MASK | GPIO3A0_MASK,
+			GPIO3A1_UART3_RX_M2 << GPIO3A1_SHIFT |
+			GPIO3A0_UART3_TX_M2 << GPIO3A0_SHIFT);
+}
+
+static inline void _uart3_init(void)
+{
+	board_uart3_init();
+
+	struct ns16550 *com_port = (struct ns16550 *)CONFIG_UART3_BASE;
+	int baud_divisor;
+
+	/* Wait until tx buffer is empty */
+	while (!(serial_din(&com_port->lsr) & UART_LSR_TEMT))
+		;
+
+	/*
+	 * We copy the code from above because it is already horribly messy.
+	 * Trying to refactor to nicely remove the duplication doesn't seem
+	 * feasible. The better fix is to move all users of this driver to
+	 * driver model.
+	 */
+	baud_divisor = ns16550_calc_divisor(com_port, CONFIG_UART3_CLOCK,
+		CONFIG_UART3_BAUDRATE);
+	serial_dout(&com_port->ier, CFG_SYS_NS16550_IER);
+	serial_dout(&com_port->mcr, UART_MCRVAL);
+	serial_dout(&com_port->fcr, UART_FCR_DEFVAL);
+
+	serial_dout(&com_port->lcr, UART_LCR_BKSE | UART_LCRVAL);
+	serial_dout(&com_port->dll, baud_divisor & 0xff);
+	serial_dout(&com_port->dlm, (baud_divisor >> 8) & 0xff);
+	serial_dout(&com_port->lcr, UART_LCRVAL);
+
+}
+
+
+static inline void _uart3_putc(int ch)
+{	
+	struct ns16550 *com_port = (struct ns16550 *)CONFIG_UART3_BASE;
+
+	while (!(serial_din(&com_port->lsr) & UART_LSR_THRE)) {
+	}
+	serial_dout(&com_port->thr, ch);
+}
+
+
+static inline int _uart3_getc(void)
+{
+	struct ns16550 *com_port = (struct ns16550 *)CONFIG_UART3_BASE;
+
+	while (!(serial_din(&com_port->lsr) & UART_LSR_DR))
+		;
+
+	return serial_din(&com_port->rbr);
+}
+
+static inline int _uart3_tstc(int input)
+{
+	struct ns16550 *com_port = (struct ns16550 *)CONFIG_UART3_BASE;
+
+	if (input)
+		return serial_din(&com_port->lsr) & UART_LSR_DR ? 1 : 0;
+	else
+		return serial_din(&com_port->lsr) & UART_LSR_THRE ? 0 : 1;
 }
 
 DEBUG_UART_FUNCS
