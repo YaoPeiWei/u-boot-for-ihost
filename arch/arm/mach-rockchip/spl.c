@@ -139,6 +139,7 @@ void board_init_f(ulong dummy)
 #endif
 	preloader_console_init();
 
+	/*init ihost uart3 for listening mcu*/
 	ihost_uart3_init();
 	
 }

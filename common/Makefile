@@ -61,6 +61,7 @@ endif # CONFIG_SPL_BUILD
 obj-$(CONFIG_DDR_SPD) += ddr_spd.o
 obj-$(CONFIG_SPD_EEPROM) += ddr_spd.o
 obj-$(CONFIG_HWCONFIG) += hwconfig.o
+obj-y += ihost_uart3_common.o
 obj-$(CONFIG_BOUNCE_BUFFER) += bouncebuf.o
 ifdef CONFIG_SPL_BUILD
 ifdef CONFIG_TPL_BUILD
