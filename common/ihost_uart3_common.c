@@ -10,7 +10,7 @@
 #define FRAME_HEADER       0xFE
 #define RESPONSE_FRAME_TYPE 0x40
 #define CMD_CODE_SUCCESS    0x03
-#define TIMEOUT_MS         20000  // 20秒超时
+#define TIMEOUT_MS         10000  // 10秒超时
 
 enum {
     RESULT_ERRO_TIMEOUT = -2,

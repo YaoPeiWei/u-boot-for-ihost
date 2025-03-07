@@ -5,6 +5,8 @@
 #include <asm/cache.h>
 #include <bootm.h>
 #include <image.h>
+#include <ihost_uart3_common.h>
+
 
 enum boot_mode {
     BOOT_MODE_EMMC = 0,
@@ -153,8 +155,15 @@ void try_boot_from_sdcard(void)
     // todo: listen to the uart3 and get the flag to start from sd card or emmc
     // if flag try to start sd card system
     // else try to start system
-    if(run_command("run bootcmd_mmc1", 0) != 0) {
+    int ret = do_uart3_mcu(NULL, 0, 0, NULL);
+    if (ret != CMD_RET_SUCCESS) {
+        printf("%s: can not get uart3 data\n", __func__);
         try_boot_from_emmc();
+        return;
+    } else {
+        if(run_command("run bootcmd_mmc1", 0) != 0) {
+            try_boot_from_emmc();
+        }   
     }
 }
 
