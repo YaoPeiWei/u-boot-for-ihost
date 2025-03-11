@@ -1,10 +1,10 @@
 if TARGET_RV1126_SONOFF_IHOST
 
 config SYS_BOARD
-	default "sonoff-ihost"
+	default "ihost"
 
 config SYS_VENDOR
-	default "itead"
+	default "sonoff"
 
 config SYS_CONFIG_NAME
 	default "sonoff-ihost"
