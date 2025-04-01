@@ -131,7 +131,7 @@ static int g_dnl_do_config(struct usb_configuration *c)
 
 	for (; callback != g_dnl_bind_callback_end(); callback++)
 		if (!strcmp(s, callback->usb_function_name))
-			return callback->fptr(c);
+		return callback->fptr(c);
 	return -ENODEV;
 }
 

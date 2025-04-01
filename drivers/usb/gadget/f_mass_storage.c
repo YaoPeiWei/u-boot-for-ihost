@@ -253,6 +253,7 @@
 #include <linux/usb/ch9.h>
 #include <linux/usb/gadget.h>
 #include <usb_mass_storage.h>
+#include <rkusb.h>
 
 #include <asm/unaligned.h>
 #include <linux/bitops.h>
@@ -827,6 +828,7 @@ static int do_write(struct fsg_common *common)
 	unsigned int		partial_page;
 	ssize_t			nwritten;
 	int			rc;
+	const char		*cdev_name __maybe_unused;
 
 	if (curlun->ro) {
 		curlun->sense_data = SS_WRITE_PROTECTED;
@@ -984,6 +986,12 @@ static int do_write(struct fsg_common *common)
 		if (rc)
 			return rc;
 	}
+
+	#ifdef CONFIG_CMD_RKUSB
+	cdev_name = common->fsg->function.config->cdev->driver->name;
+	if (IS_RKUSB_UMS_DNL(cdev_name))
+		rkusb_do_check_parity(common);
+	#endif
 
 	return -EIO;		/* No default reply */
 }
@@ -1658,6 +1666,9 @@ static int send_status(struct fsg_common *common)
 
 
 /*-------------------------------------------------------------------------*/
+#ifdef CONFIG_CMD_RKUSB
+#include "f_rkusb.c"
+#endif
 
 /* Check whether the command is properly formed and whether its data size
  * and direction agree with the values we already have. */
@@ -1777,12 +1788,14 @@ static int check_command(struct fsg_common *common, int cmnd_size,
 
 static int do_scsi_command(struct fsg_common *common)
 {
+	printf("do_scsi_command\n");
 	struct fsg_buffhd	*bh;
 	int			rc;
 	int			reply = -EINVAL;
 	int			i;
 	static char		unknown[16];
 	struct fsg_lun		*curlun = &common->luns[common->lun];
+	const char		*cdev_name __maybe_unused;
 
 	dump_cdb(common);
 
@@ -1798,6 +1811,16 @@ static int do_scsi_command(struct fsg_common *common)
 	common->short_packet_received = 0;
 
 	down_read(&common->filesem);	/* We're using the backing file */
+	printf("common->cmnd[0]: %d\n", common->cmnd[0]);
+	cdev_name = common->fsg->function.config->cdev->driver->name;
+	if (IS_RKUSB_UMS_DNL(cdev_name)) {
+		rc = rkusb_cmd_process(common, bh, &reply);
+		if (rc == RKUSB_RC_FINISHED || rc == RKUSB_RC_ERROR)
+			goto finish;
+		else if (rc == RKUSB_RC_UNKNOWN_CMND)
+			goto unknown_cmnd;
+	}
+
 	switch (common->cmnd[0]) {
 
 	case SC_INQUIRY:
@@ -1987,9 +2010,17 @@ static int do_scsi_command(struct fsg_common *common)
 	case SC_WRITE_10:
 		common->data_size_from_cmnd =
 				get_unaligned_be16(&common->cmnd[7]) << 9;
-		reply = check_command(common, 10, DATA_DIR_FROM_HOST,
-				      (1<<1) | (0xf<<2) | (3<<7), 1,
-				      "WRITE(10)");
+
+		if (IS_RKUSB_UMS_DNL(cdev_name)) {
+			reply = check_command(common, common->cmnd_size, DATA_DIR_FROM_HOST,
+					      (1 << 1) | (0xf << 2) | (3 << 7) | (0xf << 9), 1,
+					      "WRITE(10)");
+		} else {
+			reply = check_command(common, 10, DATA_DIR_FROM_HOST,
+					      (1 << 1) | (0xf << 2) | (3 << 7), 1,
+					      "WRITE(10)");
+		}
+
 		if (reply == 0)
 			reply = do_write(common);
 		break;
@@ -2026,6 +2057,8 @@ unknown_cmnd:
 		}
 		break;
 	}
+
+finish:
 	up_read(&common->filesem);
 
 	if (reply == -EINTR)
@@ -2223,15 +2256,30 @@ reset:
 	fsg = common->fsg;
 
 	/* Enable the endpoints */
+	#ifdef CONFIG_CMD_RKUSB
+	d = fsg_ep_desc(common->gadget,
+			&fsg_fs_bulk_out_desc, &fsg_hs_bulk_out_desc,
+			&fsg_ss_bulk_out_desc, &fsg_ss_bulk_out_comp_desc,
+			fsg->bulk_out);
+	#else
 	d = fsg_ep_desc(common->gadget,
 			&fsg_fs_bulk_in_desc, &fsg_hs_bulk_in_desc);
+	#endif
+	
 	rc = enable_endpoint(common, fsg->bulk_in, d);
 	if (rc)
 		goto reset;
 	fsg->bulk_in_enabled = 1;
 
+	#ifdef CONFIG_CMD_RKUSB
+	d = fsg_ep_desc(common->gadget,
+			&fsg_fs_bulk_out_desc, &fsg_hs_bulk_out_desc,
+			&fsg_ss_bulk_out_desc, &fsg_ss_bulk_out_comp_desc,
+			fsg->bulk_out);
+	#else
 	d = fsg_ep_desc(common->gadget,
 			&fsg_fs_bulk_out_desc, &fsg_hs_bulk_out_desc);
+	#endif
 	rc = enable_endpoint(common, fsg->bulk_out, d);
 	if (rc)
 		goto reset;
@@ -2681,7 +2729,12 @@ static int fsg_bind(struct usb_configuration *c, struct usb_function *f)
 	fsg->bulk_out = ep;
 
 	/* Copy descriptors */
-	f->descriptors = usb_copy_descriptors(fsg_fs_function);
+	if (IS_RKUSB_UMS_DNL(c->cdev->driver->name)) {
+		f->descriptors = usb_copy_descriptors(rkusb_fs_function);
+	}
+	else {
+		f->descriptors = usb_copy_descriptors(fsg_fs_function);
+	}
 	if (unlikely(!f->descriptors))
 		return -ENOMEM;
 
@@ -2691,12 +2744,37 @@ static int fsg_bind(struct usb_configuration *c, struct usb_function *f)
 			fsg_fs_bulk_in_desc.bEndpointAddress;
 		fsg_hs_bulk_out_desc.bEndpointAddress =
 			fsg_fs_bulk_out_desc.bEndpointAddress;
-		f->hs_descriptors = usb_copy_descriptors(fsg_hs_function);
+
+		if (IS_RKUSB_UMS_DNL(c->cdev->driver->name))
+			f->hs_descriptors =
+				usb_copy_descriptors(rkusb_hs_function);
+		else
+			f->hs_descriptors =
+				usb_copy_descriptors(fsg_hs_function);
 		if (unlikely(!f->hs_descriptors)) {
 			free(f->descriptors);
 			return -ENOMEM;
 		}
 	}
+	#ifdef CONFIG_CMD_RKUSB
+	if (gadget_is_superspeed(gadget)) {
+		/* Assume endpoint addresses are the same as full speed */
+		fsg_ss_bulk_in_desc.bEndpointAddress =
+			fsg_fs_bulk_in_desc.bEndpointAddress;
+		fsg_ss_bulk_out_desc.bEndpointAddress =
+			fsg_fs_bulk_out_desc.bEndpointAddress;
+
+
+		if (IS_RKUSB_UMS_DNL(c->cdev->driver->name))
+			f->ss_descriptors =
+				usb_copy_descriptors(rkusb_ss_function);
+
+		if (unlikely(!f->ss_descriptors)) {
+			free(f->descriptors);
+			return -ENOMEM;
+		}
+	}
+	#endif
 	return 0;
 
 autoconf_fail:
