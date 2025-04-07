@@ -18,6 +18,7 @@
 
 #define CFG_SYS_SDRAM_BASE		0
 #define SDRAM_MAX_SIZE			0xfd000000
+#define CONFIG_ROCKUSB_G_DNL_PID	0x110b
 
 /* memory size > 128MB */
 #define ENV_MEM_LAYOUT_SETTINGS	 \

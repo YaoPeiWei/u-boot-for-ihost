@@ -18,4 +18,5 @@
 	func(MMC, mmc, 0) \
 	func(MMC, mmc, 1)
 
+#define VERBOSE_DEBUG 1
 #endif /* __NEURAL_COMPUTE_MODULE_2_H */

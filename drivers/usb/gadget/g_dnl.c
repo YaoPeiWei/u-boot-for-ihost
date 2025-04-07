@@ -131,7 +131,7 @@ static int g_dnl_do_config(struct usb_configuration *c)
 
 	for (; callback != g_dnl_bind_callback_end(); callback++)
 		if (!strcmp(s, callback->usb_function_name))
-			return callback->fptr(c);
+		return callback->fptr(c);
 	return -ENODEV;
 }
 
@@ -270,6 +270,22 @@ static int g_dnl_bind(struct usb_composite_dev *cdev)
 			__func__, gadget->name);
 		device_desc.bcdDevice = __constant_cpu_to_le16(0x9999);
 	}
+
+	printf("g_dnl_bind: %s, bcdDevice: %x\n", cdev->driver->name, device_desc.bcdDevice);
+	printf("g_dnl_bind: %s, bcdUSB: %x\n", cdev->driver->name, device_desc.bcdUSB);
+	printf("g_dnl_bind: %s, idVendor: %x\n", cdev->driver->name, device_desc.idVendor);
+	printf("g_dnl_bind: %s, idProduct: %x\n", cdev->driver->name, device_desc.idProduct);
+	printf("g_dnl_bind: %s, bDeviceClass: %x\n", cdev->driver->name, device_desc.bDeviceClass);
+	printf("g_dnl_bind: %s, bDeviceSubClass: %x\n", cdev->driver->name, device_desc.bDeviceSubClass);
+	printf("g_dnl_bind: %s, bDeviceProtocol: %x\n", cdev->driver->name, device_desc.bDeviceProtocol);
+	printf("g_dnl_bind: %s, bMaxPacketSize0: %x\n", cdev->driver->name, device_desc.bMaxPacketSize0);
+	printf("g_dnl_bind: %s, bNumConfigurations: %x\n", cdev->driver->name, device_desc.bNumConfigurations);
+	printf("g_dnl_bind: %s, iManufacturer: %x\n", cdev->driver->name, device_desc.iManufacturer);
+	printf("g_dnl_bind: %s, iProduct: %x\n", cdev->driver->name, device_desc.iProduct);
+	printf("g_dnl_bind: %s, iSerialNumber: %x\n", cdev->driver->name, device_desc.iSerialNumber);
+	printf("g_dnl_bind: %s, bLength: %x\n", cdev->driver->name, device_desc.bLength);
+	printf("g_dnl_bind: %s, bDescriptorType: %x\n", cdev->driver->name, device_desc.bDescriptorType);
+	
 
 	debug("%s: calling usb_gadget_connect for "
 			"controller '%s'\n", __func__, gadget->name);

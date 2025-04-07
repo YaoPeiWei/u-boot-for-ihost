@@ -1045,13 +1045,21 @@ composite_setup(struct usb_gadget *gadget, const struct usb_ctrlrequest *ctrl)
 			cdev->desc.bNumConfigurations =
 				count_configs(cdev, USB_DT_DEVICE);
 
-			cdev->desc.bMaxPacketSize0 =
-				cdev->gadget->ep0->maxpacket;
-			if (gadget->speed >= USB_SPEED_SUPER) {
-				cdev->desc.bcdUSB = cpu_to_le16(0x0310);
+			if (gadget_is_superspeed(gadget) &&
+						gadget->speed >= USB_SPEED_SUPER) {
+				/*
+				* bcdUSB should be 0x0300 for superspeed,
+				* but we change it to 0x0301 for rockusb.
+				*/
+				if (!strncmp(cdev->driver->name,
+									"rkusb_ums_dnl", 13) || !strncmp(cdev->driver->name, "usb_dnl_rockusb", 10))
+					cdev->desc.bcdUSB = cpu_to_le16(0x0301);
+				else
+					cdev->desc.bcdUSB = cpu_to_le16(0x0300);
 				cdev->desc.bMaxPacketSize0 = 9;
 			} else {
-				cdev->desc.bcdUSB = cpu_to_le16(0x0200);
+				cdev->desc.bMaxPacketSize0 =
+					cdev->gadget->ep0->maxpacket;
 			}
 			value = min(w_length, (u16) sizeof cdev->desc);
 			memcpy(req->buf, &cdev->desc, value);
@@ -1087,7 +1095,7 @@ composite_setup(struct usb_gadget *gadget, const struct usb_ctrlrequest *ctrl)
 			 * also issues this request, return for now for
 			 * USB 2.0 connection.
 			 */
-			if (gadget->speed >= USB_SPEED_SUPER) {
+			if (gadget->speed >= USB_SPEED_SUPER || !strncmp(cdev->driver->name, "rkusb_ums_dnl", 13) || !strncmp(cdev->driver->name, "usb_dnl_rockusb", 13)) {
 				value = bos_desc(cdev);
 				value = min(w_length, (u16)value);
 			}

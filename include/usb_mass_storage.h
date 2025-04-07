@@ -19,6 +19,9 @@ struct ums {
 			   ulong start, lbaint_t blkcnt, void *buf);
 	int (*write_sector)(struct ums *ums_dev,
 			    ulong start, lbaint_t blkcnt, const void *buf);
+#ifdef CONFIG_CMD_RKUSB
+	int (*erase_sector)(struct ums *ums_dev, ulong start, lbaint_t blkcnt);
+#endif
 	unsigned int start_sector;
 	unsigned int num_sectors;
 	const char *name;

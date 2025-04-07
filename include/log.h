@@ -263,7 +263,6 @@ int _log_buffer(enum log_category_t cat, enum log_level_t level,
  */
 #define debug_cond(cond, fmt, args...)		\
 ({						\
-	if (cond)				\
 		printf(pr_fmt(fmt), ##args);	\
 })
 

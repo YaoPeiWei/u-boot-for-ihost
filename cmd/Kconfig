@@ -1596,6 +1596,14 @@ config CMD_ROCKUSB
 	  support to communication with rockusb device. for more detail about
 	  this command, please read doc/README.rockusb.
 
+config CMD_RKUSB
+	bool "rkusb - Command to upgrade Rockchip device"
+	depends on USB_GADGET
+	help
+		rkusb command provides a way to upgrade firmware for
+		Rockchip SoC based devices, its design make use of USB
+		Bulk-Only Transport based on UMS framework.
+
 config CMD_USB_MASS_STORAGE
 	bool "UMS usb mass storage"
 	depends on USB_GADGET_DOWNLOAD
