@@ -618,6 +618,60 @@
 			#interrupt-cells = <2>;
 		};
 	};
+
+	u2phy0: usb2-phy@ff4c0000 {
+		compatible = "rockchip,rv1126-usb2phy";
+		reg = <0xff4c0000 0x8000>;
+		rockchip,grf = <&grf>;
+		clocks = <&pmucru CLK_USBPHY_OTG_REF>, <&cru PCLK_USBPHY_OTG>;
+		clock-names = "phyclk", "pclk";
+		resets = <&cru SRST_USBPHYPOR_OTG>, <&cru SRST_USBPHY_OTG_P>;
+		reset-names = "u2phy", "u2phy-apb";
+		#clock-cells = <0>;
+		status = "disabled";
+
+		u2phy_otg: otg-port {
+			#phy-cells = <0>;
+			interrupts = <GIC_SPI 115 IRQ_TYPE_LEVEL_HIGH>,
+								<GIC_SPI 116 IRQ_TYPE_LEVEL_HIGH>,
+								<GIC_SPI 117 IRQ_TYPE_LEVEL_HIGH>,
+								<GIC_SPI 120 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-names = "otg-bvalid", "otg-id",
+						"linestate", "disconnect";
+			status = "disabled";
+		};
+	};
+
+	usbdrd: usb0 {
+		compatible = "rockchip,rv1126-dwc3", "rockchip,rk3399-dwc3";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+		clocks = <&cru CLK_USBOTG_REF>, <&cru ACLK_USBOTG>, <&cru HCLK_PDUSB>;
+		clock-names = "ref_clk", "bus_clk", "hclk";
+		status = "disabled";
+
+		usbdrd_dwc3: dwc3@ffd00000 {
+			compatible = "snps,dwc3";
+			reg = <0xffd00000 0x100000>;
+			interrupts = <GIC_SPI 85 IRQ_TYPE_LEVEL_HIGH>;
+			dr_mode = "otg";
+			maximum-speed = "high-speed";
+			phys = <&u2phy_otg>;
+			phy-names = "usb2-phy";
+			phy_type = "utmi_wide";
+			power-domains = <&power RV1126_PD_USB>;
+			resets = <&cru SRST_USBOTG_A>;
+			reset-names = "usb3-otg";
+			snps,dis_enblslpm_quirk;
+			snps,dis-u2-freeclk-exists-quirk;
+			snps,dis_u2_susphy_quirk;
+			snps,dis-del-phy-power-chg-quirk;
+			snps,tx-ipgap-linecheck-dis-quirk;
+			snps,xhci-trb-ent-quirk;
+			status = "disabled";
+		};
+	};
 };
 
 #include "rv1126-pinctrl.dtsi"

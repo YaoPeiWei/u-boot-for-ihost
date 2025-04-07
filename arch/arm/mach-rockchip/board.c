@@ -292,7 +292,7 @@ int board_usb_cleanup(int index, enum usb_init_type init)
 
 static struct dwc3_device dwc3_device_data = {
 	.maximum_speed = USB_SPEED_HIGH,
-	.base = 0xfe800000,
+	.base = 0xffd00000,
 	.dr_mode = USB_DR_MODE_PERIPHERAL,
 	.index = 0,
 	.dis_u2_susphy_quirk = 1,

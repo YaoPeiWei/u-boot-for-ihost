@@ -291,6 +291,13 @@ config PHY_XILINX_ZYNQMP
 	  Enable this to support ZynqMP High Speed Gigabit Transceiver
 	  that is part of ZynqMP SoC.
 
+config PHY_ROCKCHIP_NANENG_USB2
+	bool "Support Rockchip Naneng USB2PHY"
+	depends on ARCH_ROCKCHIP
+	select PHY
+	help
+	  Support for Rockchip USB 2.0 PHY with Naneng IP block.
+
 source "drivers/phy/rockchip/Kconfig"
 source "drivers/phy/cadence/Kconfig"
 source "drivers/phy/ti/Kconfig"

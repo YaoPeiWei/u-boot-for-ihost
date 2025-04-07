@@ -16,6 +16,8 @@
 #include <config.h>
 #include <errno.h>
 #include <time.h>
+#include <linux/bug.h>
+#include <linux/delay.h>
 #include <linux/types.h>
 #include <linux/string.h>
 #include <stdarg.h>
